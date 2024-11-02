@@ -10,6 +10,12 @@ class User(AbstractUser):
         unique=True,
         max_length=EMAIL_MAX_LENGTH,
     )
+    avatar = models.ImageField(
+        verbose_name='Аватар',
+        upload_to='avatars/',
+        null=True,
+        blank=True,
+    )
     first_name = models.CharField(
         verbose_name='Имя',
         max_length=NAME_MAX_LENGTH,
@@ -29,13 +35,13 @@ class Subscription(models.Model):
     author = models.ForeignKey(
         User,
         verbose_name='Автор',
-        related_name='author',
+        related_name='subscribers',
         on_delete=models.CASCADE,
     )
     user = models.ForeignKey(
         User,
         verbose_name='Подписчик',
-        related_name='follower',
+        related_name='subscribes',
         on_delete=models.CASCADE,
     )
 
