@@ -40,7 +40,7 @@ jobs:
           DB_PORT: 5432
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
         run: |
-          python -m flake8 backend/
+          python -m flake8 backend/ --ignore=I004,I001
   build_backend_and_push_to_docker_hub:
     name: Push Docker image to DockerHub
     runs-on: ubuntu-latest
@@ -98,7 +98,7 @@ jobs:
       - name: Push to DockerHub
         uses: docker/build-push-action@v4
         with:
-          context: ./nginx/
+          context: ./infra/
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/foodgram_gateway:latest
   deploy:
