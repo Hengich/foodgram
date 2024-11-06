@@ -7,31 +7,36 @@ from rest_framework.response import Response
 
 from users.paginations import CustomPagination
 from .models import Subscription, User
-from .serializers import CustomUserSerializer, SubscriptionSerializer
+from .serializers import (CustomUserSerializer, SubscribeSerializer,
+                          SubscriptionSerializer)
+
 
 class CustomUserViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     pagination_class = CustomPagination
 
-    @action(detail=True,
-            methods=['post', 'delete'],
-            permission_classes=[IsAuthenticated],
+    @action(
+        detail=True,
+        methods=['post', 'delete'],
+        permission_classes=[IsAuthenticated],
+        serializer_class=SubscribeSerializer
     )
     def subscribe(self, request, **kwargs):
         user = request.user
         author = get_object_or_404(User, id=self.kwargs.get('id'))
 
         if request.method == 'POST':
-            serializer = SubscriptionSerializer(
-                author,
-                data=request.data,
+            serializer = SubscribeSerializer(
+                data={
+                    'user': user.id,
+                    'author': author.id},
                 context={
                     'request': request
                 }
             )
             serializer.is_valid(raise_exception=True)
-            Subscription.objects.create(user=user, author=author)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
@@ -43,9 +48,9 @@ class CustomUserViewSet(UserViewSet):
             subscription.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-    @action(detail=False,
-            permission_classes=[IsAuthenticated]
+    @action(
+        detail=False,
+        permission_classes=[IsAuthenticated]
     )
     def subscriptions(self, request):
         queryset = User.objects.filter(subscribers__user=request.user)
@@ -59,10 +64,11 @@ class CustomUserViewSet(UserViewSet):
         )
         return self.get_paginated_response(serializer.data)
 
-    @action(detail=False,
-            methods=['put', 'patch', 'delete'],
-            permission_classes=[IsAuthenticated],
-            url_path='me/avatar',
+    @action(
+        detail=False,
+        methods=['put', 'patch', 'delete'],
+        permission_classes=[IsAuthenticated],
+        url_path='me/avatar',
     )
     def avatar(self, request):
         user = request.user

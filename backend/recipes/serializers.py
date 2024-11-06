@@ -1,8 +1,10 @@
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from users.serializers import CustomUserSerializer
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
+
 
 class IngredientSerializer(serializers.ModelSerializer):
 
@@ -59,10 +61,14 @@ class RecipeListSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
         return user.favorites.filter(recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
         return user.shopping_cart.filter(recipe=obj).exists()
 
     class Meta:
@@ -83,12 +89,35 @@ class RecipeListSerializer(serializers.ModelSerializer):
 
 class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
-    tags = serializers.PrimaryKeyRelatedField(
-        queryset=Tag.objects.all(),
-        many=True,
-    )
+    tags = TagSerializer(many=True, read_only=True)
     author = CustomUserSerializer(read_only=True)
-    ingredients = RecipeIngredientsCreateSerializer(many=True)
+    ingredients = RecipeIngredientsSerializer(
+        many=True, read_only=True, source='recipeingredients'
+    )
+
+    def create(self, validated_data):
+        ingredients = self.context['request'].data.get('ingredients', [])
+        tags = self.context['request'].data.get('tags', [])
+        recipe = Recipe.objects.create(
+            author=self.context['request'].user, **validated_data
+        )
+        self.add_ingredients(ingredients, recipe)
+        recipe.tags.set(tags)
+        return recipe
+
+    def update(self, instance, validated_data):
+        ingredients = self.context['request'].data.get('ingredients', [])
+        tags = self.context['request'].data.get('tags', [])
+
+        image = validated_data.pop('image', None)
+        if image:
+            instance.image = image
+
+        instance = super().update(instance, validated_data)
+        instance.tags.set(tags)
+        instance.recipeingredients.all().delete()
+        self.add_ingredients(ingredients, instance)
+        return instance
 
     def add_ingredients(self, ingredients, recipe):
         RecipeIngredient.objects.bulk_create(
@@ -101,6 +130,43 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
                 for ingredient in ingredients
             ]
         )
+
+    def validate(self, data):
+        if self.instance is None and not data.get('image'):
+            raise ValidationError('Необходимо изображение рецепта.')
+
+        tags = self.context['request'].data.get('tags', [])
+        ingredients = self.context['request'].data.get('ingredients', [])
+
+        if not tags:
+            raise ValidationError('Необходимо выбрать хотя бы один тэг.')
+
+        if not ingredients:
+            raise ValidationError('Необходимо добавить хотя '
+                                  'бы один ингредиент.')
+
+        checked_tags = set()
+        for tag in tags:
+            if tag in checked_tags:
+                raise ValidationError('Нельзя использовать повторяющиеся '
+                                      'тэги .')
+            if not Tag.objects.filter(id=tag).exists():
+                raise ValidationError(f'Указан несуществующий тэг - {tag}.')
+            checked_tags.add(tag)
+
+        checked_ingredients = set()
+        for ingredient in ingredients:
+            if int(ingredient['amount']) < 1:
+                raise ValidationError('Мин. количество ингредиента 1 у.е.')
+            if ingredient['id'] in checked_ingredients:
+                raise ValidationError('Нельзя использовать два '
+                                      'одинаковых ингредиента.')
+            if not Ingredient.objects.filter(id=ingredient['id']).exists():
+                raise ValidationError(f'Указан несуществующий ингредиент '
+                                      f'- {ingredient}.')
+            checked_ingredients.add(ingredient['id'])
+
+        return data
 
     class Meta:
         model = Recipe

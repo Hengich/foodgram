@@ -15,6 +15,7 @@ class User(AbstractUser):
         upload_to='avatars/',
         null=True,
         blank=True,
+        default=None,
     )
     first_name = models.CharField(
         verbose_name='Имя',

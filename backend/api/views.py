@@ -8,7 +8,9 @@ from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
 from recipes.filters import IngredientFilter, RecipeFilter
-from recipes.models import Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag
+from recipes.models import (Favorite, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingCart, Tag)
+from recipes.paginations import CustomPagination
 from recipes.serializers import (
     IngredientSerializer,
     RecipeCreateUpdateSerializer,
@@ -16,6 +18,7 @@ from recipes.serializers import (
     RecipeSimpleListSerializer,
     TagSerializer,
 )
+
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
@@ -32,6 +35,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     filter_backends = (DjangoFilterBackend,)
+    pagination_class = CustomPagination
     filterset_class = RecipeFilter
 
     def get_serializer_class(self):
@@ -74,9 +78,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
         else:
             return self.delete_from(ShoppingCart, request.user, pk)
 
-    @action(detail=False,
-            methods=['get'],
-            url_path='download_shopping_cart',
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='download_shopping_cart',
     )
     def download_shopping_cart(self, request):
         user = request.user
@@ -111,6 +116,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response({'short-link': short_url},
                         status=status.HTTP_200_OK)
 
+
 def redirect_short_link(request, short_id):
     recipe = get_object_or_404(Recipe, short_link=short_id)
-    return redirect(f'/api/recipes/{recipe.id}')
+    return redirect(f'/recipes/{recipe.id}')
