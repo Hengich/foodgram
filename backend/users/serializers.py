@@ -5,8 +5,9 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SerializerMethodField
 from rest_framework.validators import UniqueTogetherValidator
 
-from .models import Subscription, User
 from recipes.models import Recipe
+
+from .models import Subscription, User
 
 
 class CustomUserSerializer(UserSerializer):

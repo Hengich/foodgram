@@ -2,8 +2,8 @@ import shortuuid
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from users.models import User
 from recipes.recipes_const import CHAR_FIELD_MAX_LENGTH
+from users.models import User
 
 
 class Ingredient(models.Model):

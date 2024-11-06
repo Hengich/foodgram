@@ -8,16 +8,13 @@ from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
 from recipes.filters import IngredientFilter, RecipeFilter
-from recipes.models import (Favorite, Ingredient, Recipe,
-                            RecipeIngredient, ShoppingCart, Tag)
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag)
 from recipes.paginations import CustomPagination
-from recipes.serializers import (
-    IngredientSerializer,
-    RecipeCreateUpdateSerializer,
-    RecipeListSerializer,
-    RecipeSimpleListSerializer,
-    TagSerializer,
-)
+from recipes.serializers import (IngredientSerializer,
+                                 RecipeCreateUpdateSerializer,
+                                 RecipeListSerializer,
+                                 RecipeSimpleListSerializer, TagSerializer)
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
