@@ -34,7 +34,7 @@ class RecipeIngredientsSerializer(serializers.ModelSerializer):
 
 class RecipeIngredientsCreateSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
-    amount = serializers.IntegerField()
+    amount = serializers.IntegerField(max_value=1, min_value=32000)
 
     class Meta:
         model = Ingredient
@@ -56,6 +56,7 @@ class RecipeListSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientsSerializer(
         many=True, required=True, source='recipe_ingredients'
     )
+    cooking_time = serializers.IntegerField(min_value=1, max_value=32000)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
@@ -135,8 +136,9 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         if self.instance is None and not data.get('image'):
             raise ValidationError('Необходимо изображение рецепта.')
 
-        tags = self.context['request'].data.get('tags', [])
-        ingredients = self.context['request'].data.get('ingredients', [])
+        request = self.context['request']
+        tags = request.data.get('tags', [])
+        ingredients = request.data.get('ingredients', [])
 
         if not tags:
             raise ValidationError('Необходимо выбрать хотя бы один тэг.')
@@ -156,8 +158,6 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
 
         checked_ingredients = set()
         for ingredient in ingredients:
-            if int(ingredient['amount']) < 1:
-                raise ValidationError('Мин. количество ингредиента 1 у.е.')
             if ingredient['id'] in checked_ingredients:
                 raise ValidationError('Нельзя использовать два '
                                       'одинаковых ингредиента.')
