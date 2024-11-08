@@ -2,7 +2,11 @@ import shortuuid
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from recipes.recipes_const import CHAR_FIELD_MAX_LENGTH
+from recipes.recipes_const import (
+    CHAR_FIELD_MAX_LENGTH, MAX_COOKING_TIME,
+    MAX_AMOUNT, MAX_SHORT_LINK_LENGTH,
+    MIN_AMOUNT, MIN_COOKING_TIME,
+    SHORT_LINK_LENGTH)
 from users.models import User
 
 
@@ -75,13 +79,15 @@ class Recipe(models.Model):
     cooking_time = models.PositiveIntegerField(
         verbose_name='Время приготовления блюда',
         validators=[
-            MinValueValidator(1, message="Не менее одной минуты!"),
-            MaxValueValidator(1000, message="Это очень долго!"),
+            MinValueValidator(MIN_COOKING_TIME,
+                              message='Не менее одной минуты!'),
+            MaxValueValidator(MAX_COOKING_TIME,
+                              message='Это очень долго!'),
         ],
     )
     short_link = models.CharField(
         verbose_name='Короткая ссылка',
-        max_length=10,
+        max_length=MAX_SHORT_LINK_LENGTH,
         blank=True,
         null=True,
         unique=True,
@@ -89,14 +95,14 @@ class Recipe(models.Model):
 
     def get_or_create_short_link(self):
         if not self.short_link:
-            self.short_link = shortuuid.uuid()[:8]
-            self.save(update_fields=["short_link"])
+            self.short_link = shortuuid.uuid()[:SHORT_LINK_LENGTH]
+            self.save(update_fields=['short_link'])
         return self.short_link
 
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ["-pub_date"]
+        ordering = ['-pub_date']
 
 
 class RecipeIngredient(models.Model):
@@ -115,8 +121,8 @@ class RecipeIngredient(models.Model):
     amount = models.PositiveIntegerField(
         verbose_name='Количество',
         validators=[
-            MinValueValidator(1, message='Не менее 1!'),
-            MaxValueValidator(10000, message='Не более 10000!'),
+            MinValueValidator(MIN_AMOUNT, message='Не менее 1!'),
+            MaxValueValidator(MAX_AMOUNT, message='Не более 32000!'),
         ],
     )
 
