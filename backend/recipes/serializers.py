@@ -3,6 +3,8 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
+from recipes.recipes_const import (MIN_AMOUNT, MAX_AMOUNT,
+                                   MIN_COOKING_TIME, MAX_COOKING_TIME)
 from users.serializers import CustomUserSerializer
 
 
@@ -34,7 +36,8 @@ class RecipeIngredientsSerializer(serializers.ModelSerializer):
 
 class RecipeIngredientsCreateSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
-    amount = serializers.IntegerField(max_value=1, min_value=32000)
+    amount = serializers.IntegerField(min_value=MIN_AMOUNT,
+                                      max_value=MAX_AMOUNT)
 
     class Meta:
         model = Ingredient
@@ -56,7 +59,8 @@ class RecipeListSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientsSerializer(
         many=True, required=True, source='recipe_ingredients'
     )
-    cooking_time = serializers.IntegerField(min_value=1, max_value=32000)
+    cooking_time = serializers.IntegerField(min_value=MIN_COOKING_TIME,
+                                            max_value=MAX_COOKING_TIME)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
