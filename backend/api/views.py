@@ -96,9 +96,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         response.write('Список покупок:\n\n'.encode('utf-8'))
         for index, item in enumerate(ingredients_sum, start=1):
             line = (
-                f'{index}. {item['ingredient__name']}'
-                f'({item['ingredient__measurement_unit']}) - '
-                f'{item['total_amount']}\n'
+                f'{index}. {item["ingredient__name"]}'
+                f'({item["ingredient__measurement_unit"]}) - '
+                f'{item["total_amount"]}\n'
             )
             response.write(line.encode('utf-8'))
         return response
