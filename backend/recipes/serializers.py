@@ -3,8 +3,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
-from recipes.recipes_const import (MIN_AMOUNT, MAX_AMOUNT,
-                                   MIN_COOKING_TIME, MAX_COOKING_TIME)
+from recipes.recipes_const import MIN_COOKING_TIME, MAX_COOKING_TIME
 from users.serializers import CustomUserSerializer
 
 
