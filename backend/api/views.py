@@ -82,7 +82,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
         response = HttpResponse(content_type='text/plain')
 
-        shopping_cart = ShoppingCart.objects.filter(user=user).values_list(
+        shopping_cart = user.shopping_cart.values_list(
             'recipe', flat=True
         )
 

@@ -87,8 +87,10 @@ class Recipe(models.Model):
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления блюда',
         validators=[
-            MinValueValidator(MIN_COOKING_TIME, message='Не менее одной минуты!'),
-            MaxValueValidator(MAX_COOKING_TIME, message='Это очень долго!'),
+            MinValueValidator(MIN_COOKING_TIME,
+                              message='Не менее одной минуты!'),
+            MaxValueValidator(MAX_COOKING_TIME,
+                              message='Это очень долго!'),
         ],
     )
     short_link = models.CharField(

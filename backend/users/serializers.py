@@ -5,7 +5,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SerializerMethodField
 from rest_framework.validators import UniqueTogetherValidator
 
-from recipes.models import Recipe
 from .models import Subscription, User
 
 
@@ -40,10 +39,10 @@ class CustomUserSerializer(UserSerializer):
         return super().update(instance, validated_data)
 
     def get_is_subscribed(self, obj):
-        user = self.context['request']
-        if user.user.is_anonymous:
+        request = self.context['request']
+        if request.user.is_anonymous:
             return False
-        return user.user.subscribes.filter(author=obj).exists()
+        return request.user.subscribes.filter(author=obj).exists()
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
@@ -128,6 +127,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
         if user == author:
             raise ValidationError('Нельзя подписаться на самого себя!')
         elif not User.objects.filter(username=author).exists():
+            # Здесь же нет связи моделей, зачем тут related_name?
             raise serializers.ValidationError(
                 f'Пользователь с username {author} не существует.')
         return validated_data
