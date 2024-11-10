@@ -94,86 +94,74 @@ class RecipeListSerializer(serializers.ModelSerializer):
 
 class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
-    tags = TagSerializer(many=True, read_only=True)
+    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
     author = CustomUserSerializer(read_only=True)
-    ingredients = RecipeIngredientsSerializer(
-        many=True, source='recipe_ingredients'
-    )
+    ingredients = RecipeIngredientsCreateSerializer(many=True)
     cooking_time = serializers.IntegerField(min_value=MIN_COOKING_TIME,
                                             max_value=MAX_COOKING_TIME)
 
     def create(self, validated_data):
-        ingredients = self.context['request'].data.get('ingredients', [])
-        tags = self.context['request'].data.get('tags', [])
+        ingredients_data = validated_data.pop('recipe_ingredients')
+        tags = validated_data.pop('tags')
         recipe = Recipe.objects.create(
             author=self.context['request'].user, **validated_data
         )
-        self.add_ingredients(ingredients, recipe)
+        self.add_ingredients(recipe, ingredients_data)
         recipe.tags.set(tags)
         return recipe
 
     def update(self, instance, validated_data):
-        ingredients = self.context['request'].data.get('ingredients', [])
-        tags = self.context['request'].data.get('tags', [])
-
+        ingredients_data = validated_data.pop('recipe_ingredients', [])
+        tags = validated_data.pop('tags', [])
         image = validated_data.pop('image', None)
+
         if image:
             instance.image = image
-
         instance = super().update(instance, validated_data)
+
         instance.tags.set(tags)
-        instance.recipeingredients.all().delete()
-        self.add_ingredients(ingredients, instance)
+        instance.recipe_ingredients.clear()
+        self.add_ingredients(instance, ingredients_data)
         return instance
 
-    def add_ingredients(self, ingredients, recipe):
-        RecipeIngredient.objects.bulk_create(
-            [
-                RecipeIngredient(
-                    recipe=recipe,
-                    ingredient_id=ingredient.get('id'),
-                    amount=ingredient.get('amount'),
-                )
-                for ingredient in ingredients
-            ]
-        )
+    def add_ingredients(self, recipe, ingredients_data):
+        for ingredient_data in ingredients_data:
+            RecipeIngredient.objects.create(
+                recipe=recipe,
+                ingredient_id=ingredient_data['id'],
+                amount=ingredient_data['amount'],
+            )
 
     def validate(self, data):
-        if self.instance is None and not data.get('image'):
-            raise ValidationError('Необходимо изображение рецепта.')
-
         request = self.context['request']
         tags = request.data.get('tags', [])
         ingredients = request.data.get('ingredients', [])
 
         if not tags:
             raise ValidationError('Необходимо выбрать хотя бы один тэг.')
-
         if not ingredients:
-            raise ValidationError('Необходимо добавить хотя '
-                                  'бы один ингредиент.')
+            raise ValidationError('Необходимо добавить хотя бы один ингредиент.')
 
-        checked_tags = set()
-        for tag in tags:
-            if tag in checked_tags:
-                raise ValidationError('Нельзя использовать повторяющиеся '
-                                      'тэги .')
-            if not Tag.objects.filter(id=tag).exists():
-                raise ValidationError(f'Указан несуществующий тэг - {tag}.')
-            checked_tags.add(tag)
+        # Validate for unique tags and existing tags
+        if len(tags) != len(set(tags)):
+            raise ValidationError('Нельзя использовать повторяющиеся тэги.')
+        for tag_id in tags:
+            if not Tag.objects.filter(id=tag_id).exists():
+                raise ValidationError(f'Указан несуществующий тэг - {tag_id}.')
 
-        checked_ingredients = set()
+        # Validate for unique ingredients and existing ingredients
+        unique_ingredients = set()
         for ingredient in ingredients:
-            if ingredient['id'] in checked_ingredients:
-                raise ValidationError('Нельзя использовать два '
-                                      'одинаковых ингредиента.')
-            if not Ingredient.objects.filter(id=ingredient['id']).exists():
-                raise ValidationError(f'Указан несуществующий ингредиент '
-                                      f'- {ingredient}.')
-            checked_ingredients.add(ingredient['id'])
+            ingredient_id = ingredient.get('id')
+            if ingredient_id in unique_ingredients:
+                raise ValidationError('Нельзя использовать два одинаковых ингредиента.')
+            if not Ingredient.objects.filter(id=ingredient_id).exists():
+                raise ValidationError(f'Указан несуществующий ингредиент - {ingredient_id}.')
+            unique_ingredients.add(ingredient_id)
 
         return data
 
     class Meta:
         model = Recipe
         exclude = ('pub_date',)
+
