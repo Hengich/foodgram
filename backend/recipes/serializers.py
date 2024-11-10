@@ -94,7 +94,8 @@ class RecipeListSerializer(serializers.ModelSerializer):
 
 class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
-    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
+    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(),
+                                              many=True)
     author = CustomUserSerializer(read_only=True)
     ingredients = RecipeIngredientsCreateSerializer(many=True)
     cooking_time = serializers.IntegerField(min_value=MIN_COOKING_TIME,
@@ -140,7 +141,8 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         if not tags:
             raise ValidationError('Необходимо выбрать хотя бы один тэг.')
         if not ingredients:
-            raise ValidationError('Необходимо добавить хотя бы один ингредиент.')
+            raise ValidationError(
+                'Необходимо добавить хотя бы один ингредиент.')
 
         # Validate for unique tags and existing tags
         if len(tags) != len(set(tags)):
@@ -154,9 +156,11 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         for ingredient in ingredients:
             ingredient_id = ingredient.get('id')
             if ingredient_id in unique_ingredients:
-                raise ValidationError('Нельзя использовать два одинаковых ингредиента.')
+                raise ValidationError(
+                    'Нельзя использовать два одинаковых ингредиента.')
             if not Ingredient.objects.filter(id=ingredient_id).exists():
-                raise ValidationError(f'Указан несуществующий ингредиент - {ingredient_id}.')
+                raise ValidationError(
+                    f'Указан несуществующий ингредиент - {ingredient_id}.')
             unique_ingredients.add(ingredient_id)
 
         return data
@@ -164,4 +168,3 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         exclude = ('pub_date',)
-
