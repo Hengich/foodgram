@@ -97,7 +97,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     author = CustomUserSerializer(read_only=True)
     ingredients = RecipeIngredientsSerializer(
-        many=True, source='recipeingredients'
+        many=True, source='recipe_ingredients'
     )
     cooking_time = serializers.IntegerField(min_value=MIN_COOKING_TIME,
                                             max_value=MAX_COOKING_TIME)
