@@ -31,6 +31,9 @@ class User(AbstractUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
+    def __str__(self):
+        return self.username
+
 
 class Subscription(models.Model):
     author = models.ForeignKey(
@@ -56,3 +59,6 @@ class Subscription(models.Model):
                 fields=('author', 'user'),
             )
         ]
+
+    def __str__(self):
+        return f'Подписка {self.user.username} на {self.author.username}'

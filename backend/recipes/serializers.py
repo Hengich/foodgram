@@ -34,16 +34,6 @@ class RecipeIngredientsSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
-class RecipeIngredientsCreateSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
-    amount = serializers.IntegerField(min_value=MIN_AMOUNT,
-                                      max_value=MAX_AMOUNT)
-
-    class Meta:
-        model = Ingredient
-        fields = ('id', 'amount')
-
-
 class RecipeSimpleListSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -97,7 +87,9 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(),
                                               many=True)
     author = CustomUserSerializer(read_only=True)
-    ingredients = RecipeIngredientsCreateSerializer(many=True)
+    ingredients = RecipeIngredientsSerializer(
+        many=True, read_only=True, source='recipeingredients'
+    )
     cooking_time = serializers.IntegerField(min_value=MIN_COOKING_TIME,
                                             max_value=MAX_COOKING_TIME)
 

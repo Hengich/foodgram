@@ -2,11 +2,13 @@ import shortuuid
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from recipes.recipes_const import (
-    CHAR_FIELD_MAX_LENGTH, MAX_COOKING_TIME,
-    MAX_AMOUNT, MAX_SHORT_LINK_LENGTH,
-    MIN_AMOUNT, MIN_COOKING_TIME,
-    SHORT_LINK_LENGTH)
+from recipes.recipes_const import (CHAR_FIELD_MAX_LENGTH,
+                                   MAX_AMOUNT,
+                                   MAX_COOKING_TIME,
+                                   MIN_AMOUNT,
+                                   MIN_COOKING_TIME,
+                                   SHORT_LINK_MAX_LENGTH,
+                                   SHORT_LINK_LENGTH)
 from users.models import User
 
 
@@ -25,6 +27,9 @@ class Ingredient(models.Model):
         verbose_name_plural = 'Ингредиенты'
         ordering = ('name'),
 
+    def __str__(self):
+        return self.name
+
 
 class Tag(models.Model):
     name = models.CharField(
@@ -41,6 +46,9 @@ class Tag(models.Model):
         ordering = ('name',)
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
+
+    def __str__(self):
+        return self.name
 
 
 class Recipe(models.Model):
@@ -87,7 +95,7 @@ class Recipe(models.Model):
     )
     short_link = models.CharField(
         verbose_name='Короткая ссылка',
-        max_length=MAX_SHORT_LINK_LENGTH,
+        max_length=SHORT_LINK_MAX_LENGTH,
         blank=True,
         null=True,
         unique=True,
@@ -103,6 +111,9 @@ class Recipe(models.Model):
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
         ordering = ['-pub_date']
+
+    def __str__(self):
+        return self.name
 
 
 class RecipeIngredient(models.Model):
@@ -131,6 +142,9 @@ class RecipeIngredient(models.Model):
         verbose_name_plural = 'Ингредиенты рецепта'
         ordering = ('id',)
 
+    def __str__(self):
+        return f'{self.ingredient.name} - {self.amount}'
+
 
 class Favorite(models.Model):
     recipe = models.ForeignKey(
@@ -154,6 +168,9 @@ class Favorite(models.Model):
                 fields=['user', 'recipe'], name='unique_favorite_recipe'
             ),
         ]
+
+    def __str__(self):
+        return f'Рецепт {self.recipe.name} в избранном у {self.user.username}'
 
 
 class ShoppingCart(models.Model):
@@ -179,3 +196,7 @@ class ShoppingCart(models.Model):
                 fields=('user', 'recipe'), name='unique_shopping_cart_recipe'
             ),
         )
+
+    def __str__(self):
+        return (f'Рецепт {self.recipe.name} в списке покупок у'
+                f' {self.user.username}')
