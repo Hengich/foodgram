@@ -2,7 +2,13 @@ import shortuuid
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from recipes.recipes_const import CHAR_FIELD_MAX_LENGTH
+from recipes.recipes_const import (CHAR_FIELD_MAX_LENGTH,
+                                   MAX_AMOUNT,
+                                   MAX_COOKING_TIME,
+                                   MIN_AMOUNT,
+                                   MIN_COOKING_TIME,
+                                   SHORT_LINK_MAX_LENGTH,
+                                   SHORT_LINK_LENGTH)
 from users.models import User
 
 
@@ -21,6 +27,9 @@ class Ingredient(models.Model):
         verbose_name_plural = 'Ингредиенты'
         ordering = ('name'),
 
+    def __str__(self):
+        return self.name
+
 
 class Tag(models.Model):
     name = models.CharField(
@@ -37,6 +46,9 @@ class Tag(models.Model):
         ordering = ('name',)
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
+
+    def __str__(self):
+        return self.name
 
 
 class Recipe(models.Model):
@@ -72,16 +84,16 @@ class Recipe(models.Model):
         verbose_name='Теги',
         related_name='recipes',
     )
-    cooking_time = models.PositiveIntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления блюда',
         validators=[
-            MinValueValidator(1, message="Не менее одной минуты!"),
-            MaxValueValidator(1000, message="Это очень долго!"),
+            MinValueValidator(MIN_COOKING_TIME, message='Не менее одной минуты!'),
+            MaxValueValidator(MAX_COOKING_TIME, message='Это очень долго!'),
         ],
     )
     short_link = models.CharField(
         verbose_name='Короткая ссылка',
-        max_length=10,
+        max_length=SHORT_LINK_MAX_LENGTH,
         blank=True,
         null=True,
         unique=True,
@@ -89,14 +101,17 @@ class Recipe(models.Model):
 
     def get_or_create_short_link(self):
         if not self.short_link:
-            self.short_link = shortuuid.uuid()[:8]
-            self.save(update_fields=["short_link"])
+            self.short_link = shortuuid.uuid()[:SHORT_LINK_LENGTH]
+            self.save(update_fields=['short_link'])
         return self.short_link
 
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ["-pub_date"]
+        ordering = ['-pub_date']
+
+    def __str__(self):
+        return self.name
 
 
 class RecipeIngredient(models.Model):
@@ -112,11 +127,11 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE,
         related_name='recipe_ingredients',
     )
-    amount = models.PositiveIntegerField(
+    amount = models.PositiveSmallIntegerField(
         verbose_name='Количество',
         validators=[
-            MinValueValidator(1, message='Не менее 1!'),
-            MaxValueValidator(10000, message='Не более 10000!'),
+            MinValueValidator(MIN_AMOUNT, message='Не менее 1!'),
+            MaxValueValidator(MAX_AMOUNT, message='Не более 32000!'),
         ],
     )
 
@@ -124,6 +139,9 @@ class RecipeIngredient(models.Model):
         verbose_name = 'Ингредиент рецепта'
         verbose_name_plural = 'Ингредиенты рецепта'
         ordering = ('id',)
+
+    def __str__(self):
+        return f'{self.ingredient.name} - {self.amount}'
 
 
 class Favorite(models.Model):
@@ -149,6 +167,9 @@ class Favorite(models.Model):
             ),
         ]
 
+    def __str__(self):
+        return f'Рецепт {self.recipe.name} в избранном у {self.user.username}'
+
 
 class ShoppingCart(models.Model):
     user = models.ForeignKey(
@@ -173,3 +194,7 @@ class ShoppingCart(models.Model):
                 fields=('user', 'recipe'), name='unique_shopping_cart_recipe'
             ),
         )
+
+    def __str__(self):
+        return (f'Рецепт {self.recipe.name} в списке покупок у'
+                f' {self.user.username}')

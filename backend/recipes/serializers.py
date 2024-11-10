@@ -34,16 +34,6 @@ class RecipeIngredientsSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
-class RecipeIngredientsCreateSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
-    amount = serializers.IntegerField(min_value=MIN_AMOUNT,
-                                      max_value=MAX_AMOUNT)
-
-    class Meta:
-        model = Ingredient
-        fields = ('id', 'amount')
-
-
 class RecipeSimpleListSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -65,13 +55,13 @@ class RecipeListSerializer(serializers.ModelSerializer):
     is_in_shopping_cart = serializers.SerializerMethodField()
 
     def get_is_favorited(self, obj):
-        user = self.context.get('request').user
+        user = self.context['request'].user
         if user.is_anonymous:
             return False
         return user.favorites.filter(recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        user = self.context.get('request').user
+        user = self.context['request'].user
         if user.is_anonymous:
             return False
         return user.shopping_cart.filter(recipe=obj).exists()
@@ -99,6 +89,8 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientsSerializer(
         many=True, read_only=True, source='recipeingredients'
     )
+    cooking_time = serializers.IntegerField(min_value=MIN_COOKING_TIME,
+                                            max_value=MAX_COOKING_TIME)
 
     def create(self, validated_data):
         ingredients = self.context['request'].data.get('ingredients', [])

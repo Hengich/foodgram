@@ -6,7 +6,6 @@ from rest_framework.fields import SerializerMethodField
 from rest_framework.validators import UniqueTogetherValidator
 
 from recipes.models import Recipe
-
 from .models import Subscription, User
 
 
@@ -27,9 +26,9 @@ class CustomUserSerializer(UserSerializer):
         )
 
     def validate(self, attrs):
-        request = self.context.get('request')
+        request = self.context['request']
         if request and 'avatar' not in attrs or attrs.get('avatar') is None:
-            raise serializers.ValidationError("Отсутствует поле 'avatar'")
+            raise serializers.ValidationError('Отсутствует поле "avatar"')
         return super().validate(attrs)
 
     def update(self, instance, validated_data):
@@ -41,7 +40,7 @@ class CustomUserSerializer(UserSerializer):
         return super().update(instance, validated_data)
 
     def get_is_subscribed(self, obj):
-        user = self.context.get('request')
+        user = self.context['request']
         if user.user.is_anonymous:
             return False
         return user.user.subscribes.filter(author=obj).exists()
@@ -83,7 +82,7 @@ class SubscriptionSerializer(CustomUserSerializer):
 
     def validate(self, data):
         author = self.instance
-        user = self.context.get('request').user
+        user = self.context['request'].user
         if user.subscribes.filter(author=author).exists():
             raise ValidationError(
                 detail='Вы уже подписаны на этого пользователя!',
@@ -98,7 +97,7 @@ class SubscriptionSerializer(CustomUserSerializer):
 
     def get_recipes(self, obj):
         from recipes.serializers import RecipeSimpleListSerializer
-        request = self.context.get('request')
+        request = self.context['request']
         limit = request.GET.get('recipes_limit')
         recipes = obj.recipes.all()
         if limit:
@@ -108,7 +107,7 @@ class SubscriptionSerializer(CustomUserSerializer):
         return serializer.data
 
     def get_recipes_count(self, obj):
-        return Recipe.objects.filter(author=obj).count()
+        return obj.recipes.count()
 
 
 class SubscribeSerializer(serializers.ModelSerializer):
@@ -125,7 +124,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
 
     def validate(self, validated_data):
         author = validated_data['author']
-        user = self.context.get('request').user
+        user = self.context['request'].user
         if user == author:
             raise ValidationError('Нельзя подписаться на самого себя!')
         elif not User.objects.filter(username=author).exists():
@@ -136,5 +135,5 @@ class SubscribeSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return SubscriptionSerializer(
             instance.author,
-            context={'request': self.context.get('request')}
+            context={'request': self.context['request']}
         ).data
