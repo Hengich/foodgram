@@ -2,13 +2,13 @@ import shortuuid
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from recipes.recipes_const import (CHAR_FIELD_MAX_LENGTH,
-                                   MAX_AMOUNT,
-                                   MAX_COOKING_TIME,
-                                   MIN_AMOUNT,
-                                   MIN_COOKING_TIME,
-                                   SHORT_LINK_MAX_LENGTH,
-                                   SHORT_LINK_LENGTH)
+from .recipes_const import (CHAR_FIELD_MAX_LENGTH,
+                            MAX_AMOUNT,
+                            MAX_COOKING_TIME,
+                            MIN_AMOUNT,
+                            MIN_COOKING_TIME,
+                            SHORT_LINK_MAX_LENGTH,
+                            SHORT_LINK_LENGTH)
 from users.models import User
 
 
