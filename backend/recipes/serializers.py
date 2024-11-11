@@ -1,3 +1,4 @@
+from django.db.models import F
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -58,8 +59,8 @@ class RecipeListSerializer(serializers.ModelSerializer):
     author = CustomUserSerializer(read_only=True)
     image = serializers.ReadOnlyField(source='image.url')
     tags = TagSerializer(many=True)
-    ingredients = RecipeIngredientsSerializer(
-        many=True, required=True, source='recipe_ingredients'
+    ingredients = serializers.SerializerMethodField(
+        method_name='get_ingredients'
     )
     cooking_time = serializers.IntegerField(min_value=MIN_COOKING_TIME,
                                             max_value=MAX_COOKING_TIME)
@@ -77,6 +78,14 @@ class RecipeListSerializer(serializers.ModelSerializer):
         if user.is_anonymous:
             return False
         return user.shopping_cart.filter(recipe=obj).exists()
+
+    def get_ingredients(self, obj):
+        return obj.ingredients.values(
+            'id',
+            'name',
+            'measurement_unit',
+            amount=F('recipe_ingredients__amount')
+        )
 
     class Meta:
         model = Recipe
