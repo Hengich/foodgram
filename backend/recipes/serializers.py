@@ -30,12 +30,20 @@ class RecipeIngredientsSerializer(serializers.ModelSerializer):
     measurement_unit = serializers.ReadOnlyField(
         source='ingredient.measurement_unit'
     )
+
+    class Meta:
+        model = Ingredient
+        fields = ('id', 'name', 'measurement_unit', 'amount')
+
+
+class RecipeIngredientsCreateSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(source='ingredient.id')
     amount = serializers.IntegerField(min_value=MIN_AMOUNT,
                                       max_value=MAX_AMOUNT)
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'name', 'measurement_unit', 'amount')
+        fields = ('id', 'amount')
 
 
 class RecipeSimpleListSerializer(serializers.ModelSerializer):
@@ -51,7 +59,7 @@ class RecipeListSerializer(serializers.ModelSerializer):
     image = serializers.ReadOnlyField(source='image.url')
     tags = TagSerializer(many=True)
     ingredients = RecipeIngredientsSerializer(
-        many=True,
+        many=True, required=True, source='recipe_ingredients'
     )
     cooking_time = serializers.IntegerField(min_value=MIN_COOKING_TIME,
                                             max_value=MAX_COOKING_TIME)
@@ -90,8 +98,8 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     image = Base64ImageField()
     tags = TagSerializer(many=True, read_only=True)
     author = CustomUserSerializer(read_only=True)
-    ingredients = RecipeIngredientsSerializer(
-        many=True, read_only=True, source='recipeingredients'
+    ingredients = RecipeIngredientsCreateSerializer(
+        many=True,
     )
     cooking_time = serializers.IntegerField(min_value=MIN_COOKING_TIME,
                                             max_value=MAX_COOKING_TIME)
