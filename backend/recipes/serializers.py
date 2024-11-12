@@ -38,7 +38,7 @@ class RecipeIngredientsSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientsCreateSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(source='ingredient.id')
+    id = serializers.IntegerField()
     amount = serializers.IntegerField(min_value=MIN_AMOUNT,
                                       max_value=MAX_AMOUNT)
 
@@ -114,7 +114,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
                                             max_value=MAX_COOKING_TIME)
 
     def create(self, validated_data):
-        ingredients = self.context['request'].data.get('ingredients', [])
+        ingredients = validated_data.pop('ingredients')
         tags = self.context['request'].data.get('tags', [])
         recipe = Recipe.objects.create(
             author=self.context['request'].user, **validated_data
@@ -142,8 +142,8 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
             [
                 RecipeIngredient(
                     recipe=recipe,
-                    ingredient_id=ingredient.get('id'),
-                    amount=ingredient.get('amount'),
+                    ingredient_id=ingredient['id'],
+                    amount=ingredient['amount'],
                 )
                 for ingredient in ingredients
             ]
@@ -182,8 +182,12 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
                 raise ValidationError(f'Указан несуществующий ингредиент '
                                       f'- {ingredient}.')
             checked_ingredients.add(ingredient['id'])
-
         return data
+
+    def to_representation(self, instance):
+        return RecipeListSerializer(
+            instance, context={"request": self.context.get("request")}
+        ).data
 
     class Meta:
         model = Recipe
